@@ -42,13 +42,13 @@ jobs:
           python -c "from PIL import Image; img = Image.open('logo.png'); img.save('icons/icon.ico', format='ICO', sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])"
 
       - name: Converter Ícone para macOS (.icns)
-        if: matrix.os == 'macos-latest'
-        run: |
-          pip install icnsutil pillow
-          mkdir icon.iconset
-          python -c "from PIL import Image; img = Image.open('logo.png'); [img.resize((s, s)).save(f'icon.iconset/icon_{s}x{s}.png') for s in [16, 32, 128, 256, 512]]"
-          python -m icnsutil create -o icons/icon.icns icon.iconset
-          rm -rf icon.iconset
+           if: matrix.os == 'macos-latest'
+           run: |
+             pip install icnsutil pillow
+             mkdir icon.iconset
+             python -c "from PIL import Image; img = Image.open('logo.png'); [img.resize((s, s)).save(f'icon.iconset/icon_{s}x{s}.png') for s in [16, 32, 128, 256, 512]]"
+             python -m icnsutil compose -o icons/icon.icns icon.iconset
+             rm -rf icon.iconset
 
       - name: Converter Ícone para Linux (.png)
         if: matrix.os == 'ubuntu-latest'
