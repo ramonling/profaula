@@ -1,4 +1,4 @@
-name: Build EduPlan AI Beta
+name: Build EduPlan AI com Icones
 
 on:
   push:
@@ -20,7 +20,44 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalar Dependências
+      # --- PARTE 1: FERRAMENTAS DE IMAGEM ---
+
+      - name: Instalar ferramentas de imagem (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Instalar ferramentas de imagem (macOS)
+        if: runner.os == 'macOS'
+        run: brew install imagemagick
+
+      - name: Criar diretório de ícones
+        run: mkdir -p icons
+
+      # --- PARTE 2: GERAÇÃO DOS ÍCONES ---
+
+      - name: Converter Ícone para Windows (.ico)
+        if: matrix.os == 'windows-latest'
+        run: |
+          pip install pillow
+          python -c "from PIL import Image; img = Image.open('logo.png'); img.save('icons/icon.ico', format='ICO', sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])"
+
+      - name: Converter Ícone para macOS (.icns)
+        if: matrix.os == 'macos-latest'
+        run: |
+          pip install icnsutil pillow
+          mkdir icon.iconset
+          python -c "from PIL import Image; img = Image.open('logo.png'); [img.resize((s, s)).save(f'icon.iconset/icon_{s}x{s}.png') for s in [16, 32, 128, 256, 512]]"
+          python -m icnsutil create -o icons/icon.icns icon.iconset
+          rm -rf icon.iconset
+
+      - name: Converter Ícone para Linux (.png)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          magick convert logo.png -resize 256x256 icons/icon_linux.png
+
+      # --- PARTE 3: COMPILAÇÃO DO APLICATIVO ---
+
+      - name: Instalar Dependências do App
         run: |
           python -m pip install --upgrade pip
           pip install python-docx pypdf google-genai pyinstaller
@@ -28,12 +65,19 @@ jobs:
       - name: Compilar no Windows
         if: matrix.os == 'windows-latest'
         run: |
-          pyinstaller --noconsole --onefile --add-data "bncc_data.json;." --name "EduPlanAI" eduplan.py
+          pyinstaller --noconsole --onefile --add-data "bncc_data.json;." --name "EduPlanAI" --icon "icons/icon.ico" eduplan.py
 
-      - name: Compilar no Linux e macOS
-        if: matrix.os != 'windows-latest'
+      - name: Compilar no Linux
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          pyinstaller --noconsole --onefile --add-data "bncc_data.json:." --name "EduPlanAI" eduplan.py
+          pyinstaller --noconsole --onefile --add-data "bncc_data.json:." --name "EduPlanAI" --icon "icons/icon_linux.png" eduplan.py
+
+      - name: Compilar no macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          pyinstaller --noconsole --onefile --add-data "bncc_data.json:." --name "EduPlanAI" --icon "icons/icon.icns" eduplan.py
+
+      # --- PARTE 4: ARTEFATOS ---
 
       - name: Salvar Executável como Artefato
         uses: actions/upload-artifact@v4
