@@ -29,14 +29,11 @@ jobs:
           pip install pillow
           python -c "from PIL import Image; img = Image.open('logo.png'); img.save('icons/icon.ico', format='ICO', sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])"
 
-      - name: Instalar ImageMagick (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y imagemagick
-
       - name: Converter Ícone para Linux (.png)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          magick convert logo.png -resize 256x256 icons/icon_linux.png
+          pip install pillow
+          python -c "from PIL import Image; img = Image.open('logo.png'); img.resize((256, 256)).save('icons/icon_linux.png')"
 
       - name: Converter Ícone para macOS (.icns)
         if: matrix.os == 'macos-latest'
