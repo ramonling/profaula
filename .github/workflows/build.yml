@@ -51,6 +51,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y portaudio19-dev python3-pyaudio
 
+      - name: Instalar Dependências do Sistema (macOS / PortAudio)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install portaudio
+
       - name: Instalar Dependências do App
         run: |
           python -m pip install --upgrade pip
