@@ -1,8 +1,9 @@
-name: Build EduPlan AI com Icones
+name: Build e Publicacao Automatica de Release
 
 on:
   push:
-    branches: [ main, master ]
+    tags:
+      - 'v*'  # O processo SÓ roda quando uma tag iniciando com 'v' for enviada
 
 jobs:
   build:
@@ -47,25 +48,31 @@ jobs:
       - name: Instalar Dependências do App
         run: |
           python -m pip install --upgrade pip
-          pip install python-docx pypdf google-genai pyinstaller
+          pip install python-docx pypdf google-genai pyinstaller SpeechRecognition pyaudio
 
       - name: Compilar no Windows
         if: matrix.os == 'windows-latest'
         run: |
-          pyinstaller --noconsole --onefile --add-data "bncc_data.json;." --name "EduPlanAI" --icon "icons/icon.ico" eduplan.py
+          pyinstaller --noconsole --onefile --add-data "bncc_data.json;." --name "ProfAula-Windows" --icon "icons/icon.ico" profaula.py
 
       - name: Compilar no Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          pyinstaller --noconsole --onefile --add-data "bncc_data.json:." --name "EduPlanAI" --icon "icons/icon_linux.png" eduplan.py
+          pyinstaller --noconsole --onefile --add-data "bncc_data.json:." --name "ProfAula-Linux" --icon "icons/icon_linux.png" profaula.py
 
       - name: Compilar no macOS
         if: matrix.os == 'macos-latest'
         run: |
-          pyinstaller --noconsole --onefile --add-data "bncc_data.json:." --name "EduPlanAI" --icon "icons/icon.icns" eduplan.py
+          pyinstaller --noconsole --onefile --add-data "bncc_data.json:." --name "ProfAula-macOS" --icon "icons/icon.icns" profaula.py
+          cd dist
+          zip -r ProfAula-macOS.zip "ProfAula-macOS.app" "ProfAula-macOS"
 
-      - name: Salvar Executável como Artefato
-        uses: actions/upload-artifact@v4
+      - name: Publicar Executável na Aba Releases
+        uses: softprops/action-gh-release@v1
         with:
-          name: EduPlanAI-${{ matrix.os }}
-          path: dist/EduPlanAI*
+          files: |
+            dist/ProfAula-Windows.exe
+            dist/ProfAula-Linux
+            dist/ProfAula-macOS.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
