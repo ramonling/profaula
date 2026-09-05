@@ -45,6 +45,12 @@ jobs:
           python -m icnsutil compose icons/icon.icns icon.iconset
           rm -rf icon.iconset
 
+      - name: Instalar Dependências do Sistema (Linux / PortAudio)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev python3-pyaudio
+
       - name: Instalar Dependências do App
         run: |
           python -m pip install --upgrade pip
