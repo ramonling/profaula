@@ -1585,6 +1585,10 @@ Gere o plano completo.
                 "}\n"
             )
 
+            status_gabarito = "SIM (Você deve preencher as respostas esperadas na chave gabarito)" if flags_cfg['opt_gabarito'] else "NÃO (É OBRIGATÓRIO que a chave gabarito retorne como uma lista vazia: [])"
+            status_simplificar = "SIM (Use vocabulário super acessível e frases curtas)" if flags_cfg['opt_simplificar'] else "NÃO (Mantenha a linguagem padrão adequada à série)"
+            status_texto_apoio = f"SIM (Escreva um texto base/história completo misturando as instruções e os conteúdos do plano/livro. Tamanho exigido: {tamanho_instrucao}. Use múltiplas quebras de linha \\n para parágrafos)" if flags_cfg['opt_texto_apoio'] else "NÃO (Se o professor não pedir explicitamente nas instruções acima, deixe vazio)"
+
             prompt_user = f"""
 - Série: {ano_selecionado} | Escola: {escola_nome} | Perfil: {perfil_turma}
 - Plano Base: {texto_plano}
@@ -1595,9 +1599,9 @@ Gere o plano completo.
 
 [DIRETRIZES DA INTERFACE (CONFIGURAÇÕES DO SISTEMA)]
 ATENÇÃO IA: Siga rigorosamente as chaves de configuração abaixo.
-- GERAR GABARITO: {'SIM (Você deve preencher as respostas esperadas na chave gabarito)' if flags_cfg['opt_gabarito'] else 'NÃO (É OBRIGATÓRIO que a chave gabarito retorne como uma lista vazia: [])'}
-- SIMPLIFICAR LINGUAGEM (AEE): {'SIM (Use vocabulário super acessível e frases curtas)' if flags_cfg['opt_simplificar'] else 'NÃO (Mantenha a linguagem padrão adequada à série)'}
-- GERAR TEXTO DE APOIO: {'SIM (Escreva um texto base/história completo misturando as instruções e os conteúdos do plano/livro. Tamanho exigido: ' + tamanho_instrucao + '. Use múltiplas quebras de linha \\n para parágrafos)' if flags_cfg['opt_texto_apoio'] else 'NÃO (Se o professor não pedir explicitamente nas instruções acima, deixe vazio)'}
+- GERAR GABARITO: {status_gabarito}
+- SIMPLIFICAR LINGUAGEM (AEE): {status_simplificar}
+- GERAR TEXTO DE APOIO: {status_texto_apoio}
 - NÍVEL COGNITIVO: {flags_cfg['opt_nivel']}
 - FOCO DA ATIVIDADE: {flags_cfg['opt_foco']}
 - FORMATO DE RESPOSTA PREDOMINANTE: {layout_cfg['formato_UI']}
