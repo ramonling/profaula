@@ -69,9 +69,59 @@ DEV_MODE_FILE = os.path.join(DATA_DIR, ".profaula_devmode.txt")
 DISCIPLINAS_LISTA = ["Português", "Matemática", "Ciências", "Geografia", "História", "Arte", "Ensino Religioso", "Educação Física", "Inglês", "Multidisciplinar", "Outra"]
 
 # ==============================================================================
+# MÓDULO DE TEMA ESCURO (HELPER GLOBAL)
+# ==============================================================================
+def apply_theme_to_window(window, is_dark):
+    if is_dark:
+        bg_color = "#1E1E1E"
+        fg_color = "#E0E0E0"
+        input_bg = "#2D2D2D"
+        input_fg = "#FFFFFF"
+        sel_bg = "#005A9E"
+    else:
+        bg_color = "#F0F0F0"
+        fg_color = "#000000"
+        input_bg = "#FFFFFF"
+        input_fg = "#000000"
+        sel_bg = "#0078D7"
+
+    try:
+        window.configure(bg=bg_color)
+    except: pass
+
+    def update_widgets_recursive(parent):
+        for child in parent.winfo_children():
+            wclass = child.winfo_class()
+            if wclass in ("Text", "ScrolledText", "Entry"):
+                try:
+                    child.configure(bg=input_bg, fg=input_fg, insertbackground=input_fg, selectbackground=sel_bg)
+                except: pass
+            elif wclass == "Label":
+                try:
+                    # Preservar a cor do header original
+                    if child.cget("bg") != "#1E293B":
+                        current_fg = child.cget("fg")
+                        if is_dark and current_fg in ["black", "#000000", "SystemButtonText"]:
+                            child.configure(bg=bg_color, fg=fg_color)
+                        elif not is_dark and current_fg == fg_color:
+                            child.configure(bg=bg_color, fg="black")
+                        else:
+                            child.configure(bg=bg_color)
+                except: pass
+            elif wclass == "Frame":
+                try:
+                    # Preservar cores específicas (Header e botões personalizados se forem frames)
+                    if child.cget("bg") not in ["#1E293B", "#2563EB", "#64748B"]:
+                        child.configure(bg=bg_color)
+                except: pass
+            update_widgets_recursive(child)
+
+    update_widgets_recursive(window)
+
+# ==============================================================================
 # DIÁLOGO CUSTOMIZADO PARA COPIAR ERRO
 # ==============================================================================
-def show_error_dialog(parent, title, message):
+def show_error_dialog(parent, title, message, is_dark_mode=False):
     win = tk.Toplevel(parent)
     win.title(title)
     win.geometry("620x480")
@@ -118,6 +168,8 @@ def show_error_dialog(parent, title, message):
         relief="raised"
     )
     btn_close.pack(side="right")
+
+    apply_theme_to_window(win, is_dark_mode)
 
 # ==============================================================================
 # MOTOR MULTI-PROVEDOR SILENCIOSO E RESILIENTE
@@ -306,7 +358,7 @@ def clear_widget(widget):
 class ProfAulaApp:
     def __init__(self, root):
         self.root = root
-        self.APP_VERSION = "1.0.1"
+        self.APP_VERSION = "1.0.2"
         self.GITHUB_REPO = "ramonling/profaula"
 
         self.root.title(f"Prof. Aula — Gerador Inteligente de Planos & Atividades v{self.APP_VERSION}")
@@ -315,6 +367,8 @@ class ProfAulaApp:
 
         self.style = ttk.Style()
         self.style.theme_use("clam")
+
+        self.is_dark_mode = False
 
         self.current_draft_path = None
 
@@ -343,6 +397,52 @@ class ProfAulaApp:
         self.create_tabs()
         self.create_footer()
 
+        # Inicia com o tema padronizado ajustado
+        self.apply_theme()
+
+    def toggle_theme(self):
+        self.is_dark_mode = not self.is_dark_mode
+        self.apply_theme()
+
+    def apply_theme(self):
+        if self.is_dark_mode:
+            bg_color = "#1E1E1E"
+            fg_color = "#E0E0E0"
+            input_bg = "#2D2D2D"
+            input_fg = "#FFFFFF"
+            btn_theme_bg = "#EAB308"
+            btn_theme_fg = "black"
+            btn_theme_text = "☀️ Claro"
+            sel_bg = "#005A9E"
+        else:
+            bg_color = "#F0F0F0"
+            fg_color = "#000000"
+            input_bg = "#FFFFFF"
+            input_fg = "#000000"
+            btn_theme_bg = "#475569"
+            btn_theme_fg = "white"
+            btn_theme_text = "🌙 Escuro"
+            sel_bg = "#0078D7"
+
+        self.btn_theme.config(text=btn_theme_text, bg=btn_theme_bg, fg=btn_theme_fg)
+
+        self.style.configure(".", background=bg_color, foreground=fg_color, fieldbackground=input_bg)
+        self.style.configure("TFrame", background=bg_color)
+        self.style.configure("TLabelframe", background=bg_color, foreground=fg_color)
+        self.style.configure("TLabelframe.Label", background=bg_color, foreground=fg_color)
+        self.style.configure("TLabel", background=bg_color, foreground=fg_color)
+        self.style.configure("TCheckbutton", background=bg_color, foreground=fg_color)
+        self.style.map("TCheckbutton", background=[("active", bg_color)])
+        self.style.configure("TCombobox", fieldbackground=input_bg, background=bg_color, foreground=input_fg)
+        self.style.map("TCombobox", fieldbackground=[("readonly", input_bg)], selectbackground=[("readonly", sel_bg)])
+        self.style.configure("TNotebook", background=bg_color)
+        self.style.configure("TNotebook.Tab", background=bg_color, foreground=fg_color)
+        self.style.map("TNotebook.Tab", background=[("selected", sel_bg)], foreground=[("selected", "#FFFFFF")])
+        self.style.configure("Treeview", background=input_bg, foreground=input_fg, fieldbackground=input_bg)
+        self.style.map("Treeview", background=[("selected", sel_bg)], foreground=[("selected", "#FFFFFF")])
+
+        apply_theme_to_window(self.root, self.is_dark_mode)
+
     def track_focus(self, event):
         if isinstance(event.widget, (tk.Entry, ttk.Entry, tk.Text, scrolledtext.ScrolledText)):
             self.last_focused_widget = event.widget
@@ -356,6 +456,9 @@ class ProfAulaApp:
 
         self.btn_mic = tk.Button(header_frame, text="🎤 Ditar Texto", command=self.start_voice_typing, bg="#EF4444", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=10)
         self.btn_mic.pack(side="right", padx=(5, 15), pady=15)
+
+        self.btn_theme = tk.Button(header_frame, text="🌙 Escuro", command=self.toggle_theme, bg="#475569", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=10)
+        self.btn_theme.pack(side="right", padx=5, pady=15)
 
         config_btn = tk.Button(header_frame, text="⚙️ Configurações", command=self.open_settings_dialog, bg="#3B82F6", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=10)
         config_btn.pack(side="right", padx=5, pady=15)
@@ -540,6 +643,7 @@ class ProfAulaApp:
         self.lbl_update_status = tk.Label(win, text="", font=("Segoe UI", 9), fg="#475569")
         self.lbl_update_status.pack(pady=(5, 5))
         tk.Button(win, text="🔄 Verificar Atualizações", command=self.check_for_updates, bg="#10B981", fg="white", font=("Segoe UI", 10, "bold"), padx=15).pack(pady=5)
+        apply_theme_to_window(win, self.is_dark_mode)
 
     def check_for_updates(self):
         self.lbl_update_status.config(text="Verificando atualizações no GitHub...")
@@ -646,7 +750,7 @@ class ProfAulaApp:
             win.destroy()
 
         tk.Button(win, text="Salvar Configurações", command=save_all, bg="#10B981", fg="white", font=("Segoe UI", 10, "bold"), padx=15).pack(pady=5)
-
+        apply_theme_to_window(win, self.is_dark_mode)
 
     # ==============================================================================
     # GERENCIADOR DE RASCUNHOS (AS GAVETAS DO PROFESSOR)
@@ -832,6 +936,7 @@ class ProfAulaApp:
                 messagebox.showerror("Erro", f"Falha ao salvar rascunho:\n{e}", parent=win)
 
         tk.Button(win, text="💾 Guardar na Gaveta", command=salvar_agora, bg="#059669", fg="white", font=("Segoe UI", 10, "bold"), padx=15).pack(pady=5)
+        apply_theme_to_window(win, self.is_dark_mode)
 
     def open_draft_manager(self):
         win = tk.Toplevel(self.root)
@@ -894,6 +999,7 @@ class ProfAulaApp:
 
         tk.Button(btn_frame, text="📥 Carregar Rascunho", command=carregar_rascunho_selecionado, bg="#2563EB", fg="white", font=("Segoe UI", 10, "bold"), padx=15).pack(side="right", padx=5)
         tk.Button(btn_frame, text="🗑️ Apagar", command=excluir_rascunho, bg="#EF4444", fg="white", font=("Segoe UI", 9, "bold"), padx=10).pack(side="left", padx=5)
+        apply_theme_to_window(win, self.is_dark_mode)
 
     def populate_treeview(self):
         for i in self.tree.get_children(): self.tree.delete(i)
@@ -1363,7 +1469,7 @@ Gere o plano completo.
 
         except Exception as e:
             self.lbl_status.config(text="❌ Erro na geração.")
-            self.root.after(0, show_error_dialog, self.root, "Erro na Geração de Plano", str(e))
+            self.root.after(0, lambda: show_error_dialog(self.root, "Erro na Geração de Plano", str(e), getattr(self, 'is_dark_mode', False)))
         finally:
             self.btn_gerar.config(state="normal", bg="#2563EB")
 
@@ -1548,6 +1654,8 @@ Gere o plano completo.
         tk.Button(btn_frame, text="✅ Confirmar e Gerar", command=confirmar, bg="#10B981", fg="white", font=("Segoe UI", 10, "bold"), padx=10).pack(side="right")
         tk.Button(btn_frame, text="Voltar", command=cancelar, bg="#64748B", fg="white", font=("Segoe UI", 10, "bold"), padx=10).pack(side="left")
 
+        apply_theme_to_window(win, getattr(self, 'is_dark_mode', False))
+
     def run_activity_main_generation(self, plano_path, instrucoes_finais, layout_cfg, flags_cfg, escola_nome):
         try:
             self.root.after(0, lambda: self.lbl_status.config(text="⏳ Gerando Atividades via Motor Multi-IA principal..."))
@@ -1646,7 +1754,7 @@ Gere a folha de atividades em JSON. Lembre-se: obedeça as diretrizes de Gabarit
 
         except Exception as e:
             self.root.after(0, lambda: self.lbl_status.config(text="❌ Erro. A instrução na aba 7 foi preservada para você tentar novamente."))
-            self.root.after(0, show_error_dialog, self.root, "Erro na Geração de Atividades", str(e))
+            self.root.after(0, lambda: show_error_dialog(self.root, "Erro na Geração de Atividades", str(e), getattr(self, 'is_dark_mode', False)))
         finally:
             self.root.after(0, lambda: self.btn_gerar_atividade.config(state="normal", bg="#7C3AED"))
 
@@ -1740,9 +1848,10 @@ Gere a folha de atividades em JSON. Lembre-se: obedeça as diretrizes de Gabarit
 
             except Exception as e:
                 status_lbl.config(text="❌ Erro na revisão.")
-                show_error_dialog(win, "Erro na Revisão Cirúrgica", str(e))
+                show_error_dialog(win, "Erro na Revisão Cirúrgica", str(e), getattr(self, 'is_dark_mode', False))
 
         tk.Button(win, text="⚡ Executar Revisão Cirúrgica", command=executar_revisao_pontual, bg="#2563EB", fg="white", font=("Segoe UI", 10, "bold"), padx=15, pady=5).pack(pady=5)
+        apply_theme_to_window(win, self.is_dark_mode)
 
     # ================= EXPORTAÇÃO DOCX =================
     def format_heading(self, doc, text, level=1):
