@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'  # O processo SÓ roda quando uma tag iniciando com 'v' for enviada
 
+# CORREÇÃO 1: Dá permissão ao robô para criar a Release no repositório (Evita o erro 403)
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -81,9 +85,7 @@ jobs:
       - name: Publicar Executável na Aba Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            dist/ProfAula-Windows.exe
-            dist/ProfAula-Linux
-            dist/ProfAula-macOS.zip
+          # CORREÇÃO 2: Pega qualquer arquivo que a máquina atual tenha gerado na pasta dist
+          files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
